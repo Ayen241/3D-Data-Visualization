@@ -1,0 +1,26 @@
+# Netlify Configuration for 3D Data Visualization
+
+# Build settings
+[build]
+  # Command to run before deployment
+  command = "node scripts/build-config.js"
+  # Directory to deploy
+  publish = "."
+
+# Environment variables can be set in Netlify UI
+# Required variables:
+# - GOOGLE_CLIENT_ID: Your OAuth 2.0 Client ID
+# - SPREADSHEET_ID: Your Google Sheet ID
+# - SHEET_NAME: Name of the sheet (default: "Data Template")
+# - USE_PUBLIC_SHEET: true/false (default: true)
+
+# Redirect rules
+[[redirects]]
+  from = "/index.html"
+  to = "/index.html"
+  status = 200
+
+[[redirects]]
+  from = "/viewer.html"
+  to = "/viewer.html"
+  status = 200

@@ -212,15 +212,18 @@ php -S localhost:8080
 ├── viewer.html                 # 3D visualization page
 ├── .gitignore                  # Git ignore configuration
 ├── .env.example                # Environment variables template
+├── netlify.toml                # Netlify deployment config
 ├── README.md                   # This file
 ├── css/
-│   └── style.css              # Styles for login & 3D pages
+│   └── style.css              # Styles for both pages
 ├── js/
 │   ├── config.js              # Configuration (local, NOT in git)
 │   ├── config.js.example      # Configuration template (in git)
 │   ├── auth.js                # Google OAuth authentication
-│   ├── sheets.js              # Google Sheets data fetching
-│   └── visualization.js       # Three.js 3D rendering & controls
+│   ├── sheets.js              # Data fetching from Google Sheets
+│   └── visualization.js       # Three.js 3D visualization
+├── scripts/
+│   └── build-config.js        # Build script to generate config.js
 ```
 
 ## Technical Details
@@ -247,6 +250,79 @@ php -S localhost:8080
 ⚠️ **IMPORTANT: Before pushing to GitHub, ensure `js/config.js` is NOT committed**
 - Verify `.gitignore` includes `config.js`
 - Only `js/config.js.example` should be in the repository
+
+### For Netlify (Recommended) 🚀
+
+**See [DEPLOYMENT_NETLIFY.md](DEPLOYMENT_NETLIFY.md) for a complete step-by-step checklist with troubleshooting.**
+
+**Quick Overview:**
+
+**Step 1: Push to GitHub**
+```bash
+git add .
+git commit -m "Initial commit"
+git push origin main
+```
+
+**Step 2: Connect to Netlify**
+1. Go to [netlify.com](https://netlify.com) and sign up (use GitHub)
+2. Click "New site from Git"
+3. Select GitHub and authorize Netlify
+4. Select your repository (`3DataVis`)
+5. **Important:** Keep these settings:
+   - Build command: (leave empty - we use `netlify.toml`)
+   - Publish directory: `.` (current directory)
+6. Click "Deploy site"
+7. Wait 1-2 minutes for deployment - you'll get a URL like `https://3datavis.netlify.app`
+
+**Step 3: Add Environment Variables in Netlify**
+1. In Netlify dashboard, go to Site Settings → "Build & Deploy" → "Environment"
+2. Click "Edit variables"
+3. Add these variables:
+   - `GOOGLE_CLIENT_ID` = `your_client_id.apps.googleusercontent.com`
+   - `SPREADSHEET_ID` = `your_spreadsheet_id`
+   - `SHEET_NAME` = `Data Template`
+   - `USE_PUBLIC_SHEET` = `true`
+4. Click "Save"
+
+**Step 4: Trigger Build with Environment Variables**
+1. Go back to "Deployments" tab
+2. Click "Trigger Deploy" → "Deploy site"
+3. Netlify will run `scripts/build-config.js` and generate `config.js` from your environment variables
+
+**Step 5: Update Google Cloud Console**
+1. Go to [Google Cloud Console](https://console.cloud.google.com)
+2. Go to APIs & Services → Credentials
+3. Edit your OAuth 2.0 Client ID
+4. Update authorized origins and redirect URIs:
+   - Remove: `http://localhost:8080`
+   - Add: `https://3datavis.netlify.app`
+5. Click "Save"
+
+**Step 6: Test Your Deployment**
+1. Visit `https://3datavis.netlify.app`
+2. Click "Sign in with Google"
+3. Verify the 3D visualization loads
+4. Test all layouts: TABLE, SPHERE, HELIX, GRID
+
+**Connecting Custom Domain (Optional)**
+1. Buy a domain (Namecheap, GoDaddy, etc.)
+2. In Netlify, go to Site Settings → Domain management
+3. Add your custom domain
+4. Update DNS records as shown by Netlify
+5. Update Google Cloud Console to include your custom domain
+
+**How It Works:**
+- `netlify.toml` tells Netlify to run `scripts/build-config.js` during build
+- The script reads environment variables from Netlify dashboard
+- It generates `config.js` with your credentials
+- Credentials never get committed to git!
+
+**Troubleshooting:**
+- **"config.js is missing" error:** Trigger a new deploy in Netlify dashboard
+- **Google Sign-In fails:** Check that authorized origins in Google Cloud match your Netlify domain
+- **Build fails:** Check "Deploys" tab → click failed deploy → "Deploy log" for error details
+- **Data not loading:** Verify `SPREADSHEET_ID` and `SHEET_NAME` in environment variables
 
 ### For GitHub Pages:
 1. Create `js/config.js` locally from `js/config.js.example`
