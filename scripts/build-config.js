@@ -36,10 +36,10 @@ const configPath = path.join(__dirname, '../js/config.js');
 try {
     fs.writeFileSync(configPath, configContent, 'utf8');
     console.log('✓ config.js generated successfully');
-    console.log(\`  - Google Client ID: \${googleClientId.substring(0, 20)}...\`);
-    console.log(\`  - Spreadsheet ID: \${spreadsheetId.substring(0, 20)}...\`);
-    console.log(\`  - Sheet Name: \${sheetName}\`);
-    console.log(\`  - Use Public Sheet: \${usePublicSheet}\`);
+    console.log(`  - Google Client ID: ${googleClientId.substring(0, 20)}...`);
+    console.log(`  - Spreadsheet ID: ${spreadsheetId.substring(0, 20)}...`);
+    console.log(`  - Sheet Name: ${sheetName}`);
+    console.log(`  - Use Public Sheet: ${usePublicSheet}`);
 } catch (error) {
     console.error('✗ Failed to generate config.js:', error.message);
     process.exit(1);
