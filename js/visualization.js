@@ -1,7 +1,7 @@
 let camera, scene, renderer;
 let controls;
 let objects = [];
-let targets = { table: [], sphere: [], helix: [], grid: [] };
+let targets = { table: [], sphere: [], helix: [], grid: [], pyramid: [] };
 let currentLayout = 'table';
 
 // Initialize the 3D scene
@@ -24,6 +24,7 @@ function init(data) {
     createSphereLayout();
     createHelixLayout();
     createGridLayout();
+    createTetrahedronLayout();
 
     // Create renderer
     renderer = new THREE.CSS3DRenderer();
@@ -35,6 +36,7 @@ function init(data) {
     document.getElementById('sphere').addEventListener('click', () => transform(targets.sphere, 5000, 'sphere'));
     document.getElementById('helix').addEventListener('click', () => transform(targets.helix, 5000, 'helix'));
     document.getElementById('grid').addEventListener('click', () => transform(targets.grid, 5000, 'grid'));
+    document.getElementById('pyramid').addEventListener('click', () => transform(targets.pyramid, 5000, 'pyramid'));
 
     // Initial layout
     transform(targets.table, 5000, 'table');
@@ -184,29 +186,75 @@ function createGridLayout() {
     const cols = 10;  // x-axis (width)
     const rows = 4;   // y-axis (height)
     const depth = Math.ceil(total / (cols * rows)); // z-axis (depth)
-    
+
     console.log(`Grid layout: ${cols} x ${rows} x ${depth} = ${cols * rows * depth} positions for ${total} items`);
-    
+
     for (let i = 0; i < total; i++) {
         const object = new THREE.Object3D();
-        
+
         // CORRECTED: Calculate grid position properly
         const z = Math.floor(i / (cols * rows));  // Which depth layer
         const remainder = i % (cols * rows);       // Position within that layer
         const y = Math.floor(remainder / cols);    // Which row in the layer
         const x = remainder % cols;                 // Which column in the row
-        
+
         // Set position in 3D space
         object.position.x = x * 160 - (cols * 160) / 2;
         object.position.y = -(y * 200) + (rows * 200) / 2;  // Negative for top-to-bottom
         object.position.z = z * 200 - (depth * 200) / 2;
-        
+
         // Reset rotation for grid - all cards face forward
         object.rotation.x = 0;
         object.rotation.y = 0;
         object.rotation.z = 0;
-        
+
         targets.grid.push(object);
+    }
+}
+
+// Create tetrahedron (4-face pyramid) layout
+function createTetrahedronLayout() {
+    const total = objects.length;
+
+    // Regular tetrahedron vertices (normalized and scaled)
+    const vertices = [
+        new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(600),      // Top
+        new THREE.Vector3(1, -1, -1).normalize().multiplyScalar(600),    // Front-right-bottom
+        new THREE.Vector3(-1, 1, -1).normalize().multiplyScalar(600),    // Back-left-top
+        new THREE.Vector3(-1, -1, 1).normalize().multiplyScalar(600)     // Front-left-bottom
+    ];
+
+    console.log(`Tetrahedron layout: ${total} items distributed across 4 pyramid vertices`);
+
+    for (let i = 0; i < total; i++) {
+        const object = new THREE.Object3D();
+
+        // Assign object to one of 4 vertices
+        const vertexIndex = i % 4;
+        const positionInGroup = Math.floor(i / 4);
+
+        // Get the vertex position
+        const vertex = vertices[vertexIndex].clone();
+
+        // Distribute objects in a spiral/circular pattern around each vertex
+        const radius = 200 + (positionInGroup % 5) * 80;
+        const angle = (positionInGroup * 137.5) * Math.PI / 180; // Golden angle
+        const verticalOffset = (positionInGroup * 40) - (total / 4 * 20);
+
+        // Create position relative to vertex
+        const offsetX = radius * Math.cos(angle);
+        const offsetY = verticalOffset;
+        const offsetZ = radius * Math.sin(angle);
+
+        // Rotate offset around vertex position
+        const offset = new THREE.Vector3(offsetX, offsetY, offsetZ);
+        object.position.copy(vertex.add(offset));
+
+        // Calculate rotation to face outward from center
+        const direction = object.position.clone().normalize();
+        object.lookAt(object.position.clone().add(direction.multiplyScalar(100)));
+
+        targets.pyramid.push(object);
     }
 }
 

@@ -3,7 +3,9 @@
     "allow": [
       "Bash(dir /B \"c:\\Users\\Ayen\\Documents\\Projects\\3DataVis\")",
       "Bash(powershell -Command:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(cat:*)",
+      "Bash(git -C /c/Users/Ayen/Documents/Projects/3DataVis log --oneline)"
     ],
     "deny": [],
     "ask": []
