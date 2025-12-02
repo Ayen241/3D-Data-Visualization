@@ -215,44 +215,66 @@ function createGridLayout() {
 // Create tetrahedron (4-face pyramid) layout
 function createTetrahedronLayout() {
     const total = objects.length;
+    const itemsPerFace = Math.ceil(total / 4);
 
-    // Regular tetrahedron vertices (normalized and scaled)
+    // Define 4 tetrahedron vertices (corners of pyramid)
     const vertices = [
-        new THREE.Vector3(1, 1, 1).normalize().multiplyScalar(600),      // Top
-        new THREE.Vector3(1, -1, -1).normalize().multiplyScalar(600),    // Front-right-bottom
-        new THREE.Vector3(-1, 1, -1).normalize().multiplyScalar(600),    // Back-left-top
-        new THREE.Vector3(-1, -1, 1).normalize().multiplyScalar(600)     // Front-left-bottom
+        new THREE.Vector3(0, 800, 0),                              // Top vertex
+        new THREE.Vector3(566, -400, 0),                           // Bottom-right
+        new THREE.Vector3(-283, -400, 490),                        // Bottom-back-right
+        new THREE.Vector3(-283, -400, -490)                        // Bottom-back-left
     ];
 
-    console.log(`Tetrahedron layout: ${total} items distributed across 4 pyramid vertices`);
+    // For each vertex, define 2 edge vectors to form a triangular face
+    const edges = [
+        { v1: new THREE.Vector3(566, -400, 0), v2: new THREE.Vector3(-283, -400, 490) },     // Face 1
+        { v1: new THREE.Vector3(-283, -400, 490), v2: new THREE.Vector3(-283, -400, -490) }, // Face 2
+        { v1: new THREE.Vector3(-283, -400, -490), v2: new THREE.Vector3(566, -400, 0) },    // Face 3
+        { v1: new THREE.Vector3(0, 800, 0), v2: new THREE.Vector3(566, -400, 0) }             // Face 4 (center point for 4th face)
+    ];
+
+    console.log(`Tetrahedron layout: ${total} items distributed across 4 pyramid faces (${itemsPerFace} per face)`);
 
     for (let i = 0; i < total; i++) {
         const object = new THREE.Object3D();
 
-        // Assign object to one of 4 vertices
-        const vertexIndex = i % 4;
-        const positionInGroup = Math.floor(i / 4);
+        // Assign to face (0-3)
+        const faceIndex = Math.floor(i / itemsPerFace);
+        const posInFace = i % itemsPerFace;
 
-        // Get the vertex position
-        const vertex = vertices[vertexIndex].clone();
+        // Calculate triangular grid position within face
+        const rows = Math.ceil(Math.sqrt(itemsPerFace * 1.5));
+        const row = Math.floor(posInFace / rows);
+        const col = posInFace % rows;
 
-        // Distribute objects in a spiral/circular pattern around each vertex
-        const radius = 200 + (positionInGroup % 5) * 80;
-        const angle = (positionInGroup * 137.5) * Math.PI / 180; // Golden angle
-        const verticalOffset = (positionInGroup * 40) - (total / 4 * 20);
+        // Parametric position within triangle (0 to 1)
+        const u = col / rows;
+        const v = row / rows;
 
-        // Create position relative to vertex
-        const offsetX = radius * Math.cos(angle);
-        const offsetY = verticalOffset;
-        const offsetZ = radius * Math.sin(angle);
+        // Ensure we stay within triangle
+        if (u + v > 1) {
+            continue; // Skip invalid positions
+        }
 
-        // Rotate offset around vertex position
-        const offset = new THREE.Vector3(offsetX, offsetY, offsetZ);
-        object.position.copy(vertex.add(offset));
+        // Get the vertex and edge vectors for this face
+        const vertex = vertices[faceIndex].clone();
+        const edge1 = edges[faceIndex].v1.clone();
+        const edge2 = edges[faceIndex].v2.clone();
 
-        // Calculate rotation to face outward from center
-        const direction = object.position.clone().normalize();
-        object.lookAt(object.position.clone().add(direction.multiplyScalar(100)));
+        // Calculate position within triangular face using barycentric coordinates
+        const pos = vertex.clone()
+            .multiplyScalar(1 - u - v)
+            .add(edge1.clone().multiplyScalar(u))
+            .add(edge2.clone().multiplyScalar(v));
+
+        // Add some radial offset to create depth
+        const centerOffset = 150;
+        const dir = pos.clone().normalize();
+        object.position.copy(pos.add(dir.multiplyScalar(centerOffset)));
+
+        // Rotate to face outward
+        const outward = object.position.clone().normalize();
+        object.lookAt(object.position.clone().add(outward.multiplyScalar(100)));
 
         targets.pyramid.push(object);
     }
