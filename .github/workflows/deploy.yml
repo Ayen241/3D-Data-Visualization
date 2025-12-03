@@ -52,6 +52,11 @@ jobs:
         echo "=== All files in js directory ==="
         ls -la js/
 
+    - name: List all files before upload
+      run: |
+        echo "=== All files in root directory ==="
+        find . -type f -name "*.js" -o -name "*.html" | sort
+
     - name: Setup Pages
       uses: actions/configure-pages@v4
 
@@ -59,6 +64,9 @@ jobs:
       uses: actions/upload-pages-artifact@v3
       with:
         path: './'
+
+    - name: Show artifact size
+      run: du -sh .
 
     - name: Deploy to GitHub Pages
       id: deployment
