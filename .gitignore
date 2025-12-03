@@ -3,6 +3,7 @@
 .env.local
 .env.*.local
 config.js
+js/config.js
 !js/config.js.example
 
 # IDE and Editor files
