@@ -214,84 +214,76 @@ function createGridLayout() {
 // Create tetrahedron (4-face pyramid) layout
 function createTetrahedronLayout() {
     const total = objects.length;
-    const itemsPerFace = Math.ceil(total / 4);
 
-    // Define 4 face normals (direction each face points)
-    const faceNormals = [
-        new THREE.Vector3(0, 1, 0).normalize(),                    // Face 0: Top
-        new THREE.Vector3(0.816, -0.408, 0.408).normalize(),       // Face 1: Bottom-right
-        new THREE.Vector3(-0.408, -0.408, 0.816).normalize(),      // Face 2: Bottom-back-right
-        new THREE.Vector3(-0.408, -0.408, -0.816).normalize()      // Face 3: Bottom-back-left
+    // Define 4 vertices of a regular tetrahedron
+    const vertices = [
+        new THREE.Vector3(1, 1, 1).normalize(),      // Vertex 0
+        new THREE.Vector3(1, -1, -1).normalize(),    // Vertex 1
+        new THREE.Vector3(-1, 1, -1).normalize(),    // Vertex 2
+        new THREE.Vector3(-1, -1, 1).normalize()     // Vertex 3
     ];
 
-    // For each face, we need two orthogonal vectors to create a 2D grid
-    const faceVectors = [];
-    for (let i = 0; i < 4; i++) {
-        const normal = faceNormals[i];
+    // Scale vertices to create distance from center
+    const scale = 800;
+    vertices.forEach(v => v.multiplyScalar(scale));
 
-        // Find two orthogonal vectors in the plane perpendicular to normal
-        const right = new THREE.Vector3();
-        const up = new THREE.Vector3();
+    // Define 4 faces as triangles (3 vertices each)
+    const faces = [
+        [0, 1, 2],  // Face 0
+        [0, 2, 3],  // Face 1
+        [0, 3, 1],  // Face 2
+        [1, 2, 3]   // Face 3
+    ];
 
-        if (Math.abs(normal.y) < 0.9) {
-            right.crossVectors(new THREE.Vector3(0, 1, 0), normal).normalize();
-        } else {
-            right.crossVectors(new THREE.Vector3(1, 0, 0), normal).normalize();
-        }
-        up.crossVectors(normal, right).normalize();
+    console.log(`Tetrahedron layout: ${total} items distributed across 4 triangular faces`);
 
-        faceVectors.push({ normal, right, up });
+    // Calculate how many rows we need to fit all items across 4 faces
+    // Triangular grid: n rows hold n*(n+1)/2 items
+    // We need 4 * n*(n+1)/2 >= total, so n*(n+1)/2 >= total/4
+    let triangleRows = 0;
+    while (triangleRows * (triangleRows + 1) / 2 < total / 4) {
+        triangleRows++;
     }
 
-    console.log(`Tetrahedron layout: ${total} items distributed across 4 pyramid faces (${itemsPerFace} per face)`);
+    let objectIndex = 0;
 
-    const faceRadius = 700;
-    const spacing = 180;
-    const gridSize = Math.ceil(Math.sqrt(itemsPerFace * 1.5));
+    // For each of 4 triangular faces
+    for (let faceIdx = 0; faceIdx < 4 && objectIndex < total; faceIdx++) {
+        const [v0Idx, v1Idx, v2Idx] = faces[faceIdx];
+        const v0 = vertices[v0Idx].clone();
+        const v1 = vertices[v1Idx].clone();
+        const v2 = vertices[v2Idx].clone();
 
-    for (let i = 0; i < total; i++) {
-        const object = new THREE.Object3D();
+        // Calculate face center
+        const faceCenter = new THREE.Vector3().addVectors(v0, v1).add(v2).divideScalar(3);
 
-        // Assign to face
-        const faceIdx = Math.floor(i / itemsPerFace);
-        const posInFace = i % itemsPerFace;
+        // Place items in triangular grid using proper barycentric coordinates
+        // Iterate through all valid (i, j) positions in triangle: i + j <= triangleRows
+        for (let i = 0; i <= triangleRows && objectIndex < total; i++) {
+            for (let j = 0; j <= triangleRows - i && objectIndex < total; j++) {
+                const object = new THREE.Object3D();
 
-        // Convert linear position to triangular grid
-        let gridPos = 0;
-        let row = 0;
-        let col = 0;
+                // Convert grid indices to barycentric coordinates
+                const u = i / triangleRows;
+                const v = j / triangleRows;
+                const w = 1 - u - v;
 
-        for (let r = 0; r < gridSize; r++) {
-            for (let c = 0; c <= r; c++) {
-                if (gridPos === posInFace) {
-                    row = r;
-                    col = c;
-                    break;
-                }
-                gridPos++;
+                // Calculate position on triangle face using barycentric coordinates
+                const position = new THREE.Vector3()
+                    .addScaledVector(v0, w)
+                    .addScaledVector(v1, u)
+                    .addScaledVector(v2, v);
+
+                object.position.copy(position);
+
+                // Rotate to face outward from center
+                const outwardDir = faceCenter.clone().normalize().multiplyScalar(2000);
+                object.lookAt(outwardDir);
+
+                targets.pyramid.push(object);
+                objectIndex++;
             }
-            if (gridPos > posInFace) break;
         }
-
-        // Get face vectors
-        const { normal, right, up } = faceVectors[faceIdx];
-
-        // Calculate position in triangular grid
-        const x = (col - row / 2) * spacing;
-        const y = row * spacing * 0.866; // 0.866 = sqrt(3)/2 for triangular spacing
-
-        // Position on face plane
-        const facePos = new THREE.Vector3()
-            .addScaledVector(right, x)
-            .addScaledVector(up, y);
-
-        // Move to face position (push outward from center)
-        object.position.copy(normal.clone().multiplyScalar(faceRadius)).add(facePos);
-
-        // Orient to face outward
-        object.lookAt(normal.clone().multiplyScalar(faceRadius * 2));
-
-        targets.pyramid.push(object);
     }
 }
 
