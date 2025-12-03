@@ -4,6 +4,7 @@
 .env.*.local
 config.js
 !js/config.js.example
+!js/config.js
 
 # IDE and Editor files
 .vscode/
