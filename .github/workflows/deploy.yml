@@ -4,17 +4,9 @@ on:
   push:
     branches: [ main ]
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
 
     steps:
     - uses: actions/checkout@v3
@@ -37,37 +29,11 @@ jobs:
             USE_PUBLIC_SHEET: true
         };
         EOF
-
-    - name: Verify config.js exists
-      run: |
-        echo "=== Checking if config.js was created ==="
-        if [ -f js/config.js ]; then
-          echo "✓ Config file exists"
-          cat js/config.js
-        else
-          echo "✗ Config file NOT found!"
-          exit 1
-        fi
-        echo ""
-        echo "=== All files in js directory ==="
-        ls -la js/
-
-    - name: List all files before upload
-      run: |
-        echo "=== All files in root directory ==="
-        find . -type f -name "*.js" -o -name "*.html" | sort
-
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-
-    - name: Upload artifact
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './'
-
-    - name: Show artifact size
-      run: du -sh .
+        echo "✓ Config file created successfully"
 
     - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./
+        cname: ""
