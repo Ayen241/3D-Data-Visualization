@@ -37,6 +37,10 @@ jobs:
             USE_PUBLIC_SHEET: true
         };
         EOF
+        echo "Config file created:"
+        cat js/config.js
+        echo "Files in repository:"
+        find . -name "*.js" -type f | head -20
 
     - name: Setup Pages
       uses: actions/configure-pages@v3
