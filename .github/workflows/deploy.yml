@@ -25,10 +25,11 @@ jobs:
             // Google Sheets Configuration
             SPREADSHEET_ID: '${{ secrets.SPREADSHEET_ID }}',
             SHEET_NAME: '${{ secrets.SHEET_NAME }}',
-            API_KEY: '${{ secrets.API_KEY }}',
+            API_KEY: '${{ secrets.API_KEY || '' }}',
             USE_PUBLIC_SHEET: true
         };
         EOF
+        cat js/config.js
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
