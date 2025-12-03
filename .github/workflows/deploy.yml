@@ -37,10 +37,20 @@ jobs:
             USE_PUBLIC_SHEET: true
         };
         EOF
-        echo "Config file created:"
-        cat js/config.js
-        echo "Files in repository:"
-        find . -name "*.js" -type f | head -20
+
+    - name: Verify config.js exists
+      run: |
+        echo "=== Checking if config.js was created ==="
+        if [ -f js/config.js ]; then
+          echo "✓ Config file exists"
+          cat js/config.js
+        else
+          echo "✗ Config file NOT found!"
+          exit 1
+        fi
+        echo ""
+        echo "=== All files in js directory ==="
+        ls -la js/
 
     - name: Setup Pages
       uses: actions/configure-pages@v4
